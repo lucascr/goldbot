@@ -1,0 +1,36 @@
+Goldbot bot setup
+
+1. From the repository root, install bot dependencies:
+   pip install -r bot/requirements.txt
+
+2. Create the MySQL database:
+   CREATE DATABASE goldbot;
+
+3. Apply the schema:
+   mysql -u root -p goldbot < bot/schema.sql
+
+4. Copy the sample config:
+   copy bot\config.sample.py bot\config_local.py
+
+5. Review bot/config_local.py and update:
+   - DB_CONFIG
+   - TELEGRAM_TOKEN
+   - CHAT_ID
+   - SYMBOLS
+
+6. Telegram setup checklist:
+   - Create the bot in BotFather
+   - Start a chat with the bot or add it to the target group/channel
+   - Send a message like "hi"
+   - Check:
+     https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
+   - Copy the exact chat.id into CHAT_ID
+   - For channels or supergroups, use the full -100... id
+
+7. Run the collector from the repository root:
+   python -m bot.bot
+
+Notes:
+- The bot fetches Yahoo Finance prices on a loop.
+- Alerts are sent through Telegram when strategy conditions are met.
+- If Telegram returns `chat not found`, verify the exact `chat.id` from `getUpdates`.

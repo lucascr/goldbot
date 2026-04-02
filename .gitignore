@@ -1,0 +1,22 @@
+# Python cache and build output
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local config and secrets
+bot/config_local.py
+.env
+.env.*
+
+# Editor and OS files
+.DS_Store
+Thumbs.db

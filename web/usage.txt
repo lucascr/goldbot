@@ -1,0 +1,27 @@
+Goldbot web usage
+
+1. From the repository root, install web dependencies:
+   pip install -r web/requirements.txt
+
+2. Make sure the MySQL database is available and bot/config_local.py is configured.
+
+3. Start the FastAPI server from the repository root:
+   uvicorn web.api:app --host 0.0.0.0 --port 8009
+
+4. Open the dashboard:
+   http://127.0.0.1:8009/
+
+Telegram panel notes:
+- The dashboard can send a Telegram test message.
+- It uses the same TELEGRAM_TOKEN and CHAT_ID from bot/config_local.py.
+- If you see `chat not found`, verify the exact chat id from Telegram `getUpdates`.
+
+Useful routes:
+- GET /health
+- GET /overview
+- GET /snapshot/{symbol}
+- GET /prices/{symbol}
+- GET /indicators/{symbol}
+- GET /buy/{symbol}
+- POST /telegram/test
+- WS  /ws/market
