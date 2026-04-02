@@ -67,8 +67,8 @@ def render_dashboard(symbols, symbol_metadata):
         .hero {
             position: relative;
             overflow: hidden;
-            padding: 28px;
-            border-radius: 30px;
+            padding: 20px 22px;
+            border-radius: 24px;
             border: 1px solid var(--line);
             background: linear-gradient(145deg, rgba(255, 252, 247, 0.88), rgba(245, 236, 219, 0.9));
             box-shadow: var(--shadow);
@@ -77,10 +77,10 @@ def render_dashboard(symbols, symbol_metadata):
         .hero::after {
             content: "";
             position: absolute;
-            width: 260px;
-            height: 260px;
-            right: -50px;
-            top: -110px;
+            width: 180px;
+            height: 180px;
+            right: -30px;
+            top: -70px;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(198, 138, 45, 0.30), rgba(198, 138, 45, 0));
         }
@@ -99,32 +99,32 @@ def render_dashboard(symbols, symbol_metadata):
         }
 
         h1 {
-            margin: 14px 0 10px;
-            max-width: 9ch;
+            margin: 10px 0 8px;
             font-family: var(--display);
-            font-size: clamp(2.8rem, 7vw, 5.7rem);
-            line-height: 0.94;
+            font-size: clamp(1.9rem, 4vw, 3.2rem);
+            line-height: 0.96;
             letter-spacing: -0.04em;
+            white-space: nowrap;
         }
 
         .hero-copy {
-            max-width: 58ch;
-            margin: 0;
+            max-width: 52ch;
+            margin: 18px 0 0;
             color: var(--muted);
-            line-height: 1.65;
-            font-size: 1.02rem;
+            line-height: 1.5;
+            font-size: 0.94rem;
         }
 
         .hero-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 14px;
-            margin-top: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 16px;
         }
 
         .hero-stat {
-            padding: 14px 16px;
-            border-radius: 18px;
+            padding: 10px 12px;
+            border-radius: 14px;
             border: 1px solid var(--line);
             background: rgba(255, 251, 246, 0.78);
             backdrop-filter: blur(8px);
@@ -132,18 +132,18 @@ def render_dashboard(symbols, symbol_metadata):
 
         .hero-stat strong {
             display: block;
-            font-size: 1.45rem;
+            font-size: 1.15rem;
         }
 
         .hero-stat span {
             color: var(--muted);
-            font-size: 0.9rem;
+            font-size: 0.82rem;
         }
 
         .status-line {
-            margin-top: 14px;
+            margin-top: 10px;
             color: var(--muted);
-            font-size: 0.92rem;
+            font-size: 0.84rem;
         }
 
         .layout {
@@ -337,6 +337,42 @@ def render_dashboard(symbols, symbol_metadata):
             color: var(--muted);
         }
 
+        .chart-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chart-legend {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-line {
+            width: 18px;
+            height: 3px;
+            border-radius: 999px;
+        }
+
+        .chart-axis-note {
+            color: var(--muted);
+            font-size: 0.78rem;
+            letter-spacing: 0.03em;
+        }
+
         canvas {
             display: block;
             width: 100%;
@@ -497,12 +533,7 @@ def render_dashboard(symbols, symbol_metadata):
     <main class="shell">
         <section class="hero">
             <div class="eyebrow">Live Market Pulse</div>
-            <h1>Goldbot Dashboard</h1>
-            <p class="hero-copy">
-                Track the whole watchlist, inspect rolling price action, and compare buy pressure across
-                multiple timeframes. The board updates through a live WebSocket stream, so the screen
-                stays fresh without manual reloads.
-            </p>
+            <h1>Goldbot Market Pulse</h1>
             <div class="hero-stats">
                 <div class="hero-stat">
                     <strong id="stat-symbols">0</strong>
@@ -567,6 +598,14 @@ def render_dashboard(symbols, symbol_metadata):
                         <div class="chart-wrap">
                             <h3>Price + Moving Averages</h3>
                             <canvas id="price-chart" width="820" height="280"></canvas>
+                            <div class="chart-meta">
+                                <div class="chart-legend">
+                                    <span class="legend-item"><span class="legend-line" style="background:#8b5e1c;"></span>Price</span>
+                                    <span class="legend-item"><span class="legend-line" style="background:#0d7a72;"></span>MA20</span>
+                                    <span class="legend-item"><span class="legend-line" style="background:#a64b3c;"></span>MA50</span>
+                                </div>
+                                <div class="chart-axis-note">Y = price, X = most recent 48 records</div>
+                            </div>
                         </div>
 
                         <div class="flow-wrap">
@@ -603,6 +642,11 @@ def render_dashboard(symbols, symbol_metadata):
             </section>
         </section>
     </main>
+    <p class="hero-copy" style="max-width:1320px;margin:0 auto 40px;padding:0 18px;">
+        Track the whole watchlist, inspect rolling price action, and compare buy pressure across
+        multiple timeframes. The board updates through a live WebSocket stream, so the screen
+        stays fresh without manual reloads.
+    </p>
 
     <script>
         const trackedSymbols = __SYMBOLS_JSON__;
@@ -754,7 +798,7 @@ def render_dashboard(symbols, symbol_metadata):
             const min = Math.min(...allValues);
             const max = Math.max(...allValues);
             const range = max - min || 1;
-            const pad = { top: 18, right: 18, bottom: 24, left: 12 };
+            const pad = { top: 18, right: 18, bottom: 30, left: 58 };
             const chartW = canvas.width - pad.left - pad.right;
             const chartH = canvas.height - pad.top - pad.bottom;
 
@@ -775,6 +819,22 @@ def render_dashboard(symbols, symbol_metadata):
                 ctx.lineTo(canvas.width - pad.right, y);
                 ctx.stroke();
             }
+
+            ctx.fillStyle = '#6c665b';
+            ctx.font = '12px Trebuchet MS';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i < 4; i += 1) {
+                const value = max - (range / 3) * i;
+                const y = pad.top + (chartH / 3) * i;
+                ctx.fillText(formatPrice(value), pad.left - 8, y);
+            }
+
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Older', pad.left, canvas.height - pad.bottom + 8);
+            ctx.textAlign = 'right';
+            ctx.fillText('Latest', canvas.width - pad.right, canvas.height - pad.bottom + 8);
 
             ctx.beginPath();
             prices.forEach((value, index) => {
