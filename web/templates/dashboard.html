@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goldbot Pulse</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+    <main class="shell">
+        <section class="hero">
+            <div class="eyebrow">Live Market Pulse</div>
+            <h1>Goldbot Market Pulse</h1>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <strong id="stat-symbols">0</strong>
+                    <span>Symbols watched</span>
+                </div>
+                <div class="hero-stat">
+                    <strong id="stat-buy">0</strong>
+                    <span>Active buy windows</span>
+                </div>
+                <div class="hero-stat">
+                    <strong id="stat-focus">-</strong>
+                    <span>Focus ticker</span>
+                </div>
+                <div class="hero-stat">
+                    <strong id="stat-socket">Connecting</strong>
+                    <span>Live stream</span>
+                </div>
+                <div class="hero-stat">
+                    <strong id="stat-bot-health">Idle</strong>
+                    <span id="stat-bot-health-meta">Bot health</span>
+                </div>
+            </div>
+            <div class="status-line" id="status-line">Preparing first market snapshot.</div>
+        </section>
+
+        <section class="layout">
+            <section class="panel">
+                <h2>Signal Board</h2>
+                <p class="panel-copy">A compact board of the tracked universe with signal state, freshness, and alert pressure.</p>
+                <div id="board" class="board loading"></div>
+            </section>
+
+            <section class="panel">
+                <div class="detail-head">
+                    <div>
+                        <div class="eyebrow" id="detail-symbol">Loading</div>
+                        <h2 id="detail-title">Building signal stack</h2>
+                        <p class="detail-copy" id="detail-copy">Waiting for the first live market frame.</p>
+                    </div>
+                    <div class="signal-chip wait" id="detail-chip">Wait</div>
+                </div>
+
+                <div class="detail-price" id="detail-price">--</div>
+                <div class="detail-summary">
+                    <div class="summary-box">
+                        <span>Signal state</span>
+                        <strong id="summary-signal">--</strong>
+                    </div>
+                    <div class="summary-box">
+                        <span>Active windows</span>
+                        <strong id="summary-windows">--</strong>
+                    </div>
+                    <div class="summary-box">
+                        <span>Last refresh</span>
+                        <strong id="summary-refresh">--</strong>
+                    </div>
+                </div>
+
+                <div class="detail-grid">
+                    <div class="stack">
+                        <div class="metric-row">
+                            <div class="metric">
+                                <span>MA20</span>
+                                <strong id="metric-ma20">--</strong>
+                            </div>
+                            <div class="metric">
+                                <span>MA50</span>
+                                <strong id="metric-ma50">--</strong>
+                            </div>
+                            <div class="metric">
+                                <span>RSI</span>
+                                <strong id="metric-rsi">--</strong>
+                            </div>
+                            <div class="metric">
+                                <span>Rows</span>
+                                <strong id="metric-rows">--</strong>
+                            </div>
+                        </div>
+
+                        <div class="chart-wrap">
+                            <h3>Price + Moving Averages</h3>
+                            <canvas id="price-chart" width="820" height="280"></canvas>
+                            <div class="chart-meta">
+                                <div class="chart-legend">
+                                    <span class="legend-item"><span class="legend-line price-line"></span>Price</span>
+                                    <span class="legend-item"><span class="legend-line ma20-line"></span>MA20</span>
+                                    <span class="legend-item"><span class="legend-line ma50-line"></span>MA50</span>
+                                </div>
+                                <div class="chart-axis-note">Y = price, X = most recent 48 records</div>
+                            </div>
+                        </div>
+
+                        <div class="flow-wrap">
+                            <h3>Signal Drivers</h3>
+                            <div id="reason-list" class="reason-list"></div>
+                        </div>
+                    </div>
+
+                    <div class="stack">
+                        <div class="signal-wrap">
+                            <h3>Multi-Timeframe Matrix</h3>
+                            <div id="timeframes" class="timeframes"></div>
+                        </div>
+
+                        <div class="signal-wrap">
+                            <h3>Live Feed</h3>
+                            <div id="pulse-list" class="pulse-list"></div>
+                        </div>
+
+                        <div class="signal-wrap">
+                            <h3>Telegram Test</h3>
+                            <div class="telegram-form">
+                                <textarea id="telegram-message">Goldbot dashboard test ping.</textarea>
+                                <div class="telegram-actions">
+                                    <button id="telegram-send" class="telegram-button" type="button">Send test message</button>
+                                    <div id="telegram-status" class="telegram-status">Ready to send a Telegram test.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-note">Uses the existing Goldbot storage, thresholds, and live runtime status.</div>
+            </section>
+        </section>
+    </main>
+
+    <p class="page-note">
+        Track the whole watchlist, inspect rolling price action, compare buy pressure across multiple timeframes,
+        and verify bot health without leaving the page.
+    </p>
+
+    <script>
+        window.GOLDBOT_BOOTSTRAP = __BOOTSTRAP_JSON__;
+    </script>
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>

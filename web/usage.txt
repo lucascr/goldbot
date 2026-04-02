@@ -16,6 +16,11 @@ Telegram panel notes:
 - It uses the same TELEGRAM_TOKEN and CHAT_ID from bot/config_local.py.
 - If you see `chat not found`, verify the exact chat id from Telegram `getUpdates`.
 
+Dashboard notes:
+- The page now includes bot health/runtime status.
+- Stale market data is marked in the board and detail views.
+- Static assets live under web/static and the page template lives under web/templates.
+
 Useful routes:
 - GET /health
 - GET /overview

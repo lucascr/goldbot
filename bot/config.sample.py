@@ -29,3 +29,23 @@ DB_CONFIG = {
     "password": "replace-with-your-db-password",
     "database": "goldbot",
 }
+
+BOT_RULES = {
+    "fast_drop_minutes": 30,
+    "fast_drop_threshold": -0.02,
+    "wti_high": 100.0,
+    "wti_low": 90.0,
+    "signal_cooldown_hours": 24,
+    "stale_after_seconds": 900,
+}
+
+BUY_SIGNAL_RULES = {
+    "rsi_oversold": 35.0,
+    "minimum_confidence": 2,
+    "timeframes": [
+        {"key": "15m", "minutes": 15, "drop_threshold": -0.008},
+        {"key": "30m", "minutes": 30, "drop_threshold": -0.015},
+        {"key": "1h", "minutes": 60, "drop_threshold": -0.022},
+        {"key": "4h", "minutes": 240, "drop_threshold": -0.035},
+    ],
+}

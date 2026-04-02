@@ -8,6 +8,8 @@ The `bot/` app is the market collector and Telegram alert worker.
 - Stores prices in MySQL
 - Evaluates alert rules
 - Sends Telegram messages when conditions are met
+- Writes runtime health/status information for the dashboard
+- Logs bot activity to `logs/goldbot.log`
 
 ## Setup
 
@@ -29,6 +31,11 @@ You can also override config with environment variables:
 - `GOLDBOT_TELEGRAM_TOKEN`
 - `GOLDBOT_CHAT_ID`
 - `GOLDBOT_CHECK_INTERVAL`
+
+Rule tuning lives in:
+
+- `BOT_RULES`
+- `BUY_SIGNAL_RULES`
 
 ## Telegram Setup
 
@@ -61,6 +68,8 @@ From the repository root:
 - `bot/config.sample.py` config template
 - `bot/config_local.py` local ignored secrets
 - `bot/db.py` database access
+- `bot/status.py` runtime status writer
+- `bot/logging_utils.py` logger setup
 - `bot/strategy.py` alert rules
 - `bot/telegram.py` Telegram sender
 - `bot/schema.sql` schema

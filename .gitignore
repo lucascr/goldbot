@@ -16,6 +16,8 @@ env/
 bot/config_local.py
 ignore/
 bot.rar
+logs/
+runtime/
 .env
 .env.*
 

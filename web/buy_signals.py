@@ -1,11 +1,7 @@
-from datetime import timedelta
-
-TIMEFRAMES = (
-    {"key": "15m", "minutes": 15, "drop_threshold": -0.008},
-    {"key": "30m", "minutes": 30, "drop_threshold": -0.015},
-    {"key": "1h", "minutes": 60, "drop_threshold": -0.022},
-    {"key": "4h", "minutes": 240, "drop_threshold": -0.035},
-)
+try:
+    from bot.config import BUY_SIGNAL_RULES
+except ImportError:
+    from config import BUY_SIGNAL_RULES
 
 
 def _normalize_rows(rows):
@@ -24,8 +20,8 @@ def _window_change(rows, minutes):
         return None
 
     latest_ts = normalized[-1][1]
-    cutoff = latest_ts - timedelta(minutes=minutes)
-    window = [item for item in normalized if item[1] >= cutoff]
+    cutoff_ts = latest_ts.timestamp() - minutes * 60
+    window = [item for item in normalized if item[1].timestamp() >= cutoff_ts]
 
     if len(window) < 2:
         return None
@@ -41,10 +37,10 @@ def _window_change(rows, minutes):
 def _build_reasons(price, ma20, rsi, change, drop_threshold):
     reasons = []
 
-    if rsi is not None and rsi < 35:
+    if rsi is not None and rsi <= float(BUY_SIGNAL_RULES["rsi_oversold"]):
         reasons.append("RSI_OVERSOLD")
 
-    if change is not None and change <= drop_threshold:
+    if change is not None and change <= float(drop_threshold):
         reasons.append("FAST_DROP")
 
     if ma20 is not None and price is not None and price < ma20:
@@ -60,19 +56,19 @@ def analyze_multi_timeframes(rows, indicators):
     price = float(indicators["price"]) if indicators.get("price") is not None else None
     ma20 = float(indicators["ma20"]) if indicators.get("ma20") is not None else None
     rsi = float(indicators["rsi"]) if indicators.get("rsi") is not None else None
+    minimum_confidence = int(BUY_SIGNAL_RULES["minimum_confidence"])
 
     signals = []
-    for timeframe in TIMEFRAMES:
+    for timeframe in BUY_SIGNAL_RULES["timeframes"]:
         change = _window_change(rows, timeframe["minutes"])
         reasons = _build_reasons(price, ma20, rsi, change, timeframe["drop_threshold"])
         confidence = len(reasons)
-
         signals.append(
             {
                 "timeframe": timeframe["key"],
                 "minutes": timeframe["minutes"],
                 "change": change,
-                "signal": "BUY" if confidence >= 2 else None,
+                "signal": "BUY" if confidence >= minimum_confidence else None,
                 "confidence": confidence,
                 "reasons": reasons,
             }

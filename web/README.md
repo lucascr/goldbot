@@ -8,8 +8,10 @@ The `web/` app is a FastAPI dashboard for browsing stored market data.
 - Overview board for tracked symbols
 - Detailed symbol snapshot endpoint
 - Live WebSocket updates at `/ws/market`
+- Bot health panel with runtime status
 - Multi-timeframe signal display
 - Telegram bot test panel
+- Stale-data warnings on cards and detail views
 
 ## Telegram Test Panel
 
@@ -43,6 +45,9 @@ Then open:
 ## Main Files
 
 - `web/api.py` FastAPI routes and WebSocket stream
-- `web/dashboard.py` rendered HTML dashboard
+- `web/dashboard.py` HTML renderer for the dashboard template
+- `web/templates/dashboard.html` dashboard markup
+- `web/static/dashboard.css` dashboard styling
+- `web/static/dashboard.js` dashboard behavior
 - `web/indicators.py` moving averages and RSI history
 - `web/buy_signals.py` multi-timeframe signal logic

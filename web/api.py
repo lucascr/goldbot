@@ -6,18 +6,21 @@ from pathlib import Path
 
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 try:
+    from bot.config import BOT_RULES, SYMBOLS, SYMBOL_METADATA
     from bot.db import get_conn, get_prices
-    from bot.config import SYMBOLS, SYMBOL_METADATA
+    from bot.status import read_runtime_status
     from bot.telegram import send_telegram_message
 except ImportError:
     repo_root = Path(__file__).resolve().parent.parent
     repo_root_str = str(repo_root)
     if repo_root_str not in sys.path:
         sys.path.insert(0, repo_root_str)
+    from bot.config import BOT_RULES, SYMBOLS, SYMBOL_METADATA
     from bot.db import get_conn, get_prices
-    from bot.config import SYMBOLS, SYMBOL_METADATA
+    from bot.status import read_runtime_status
     from bot.telegram import send_telegram_message
 
 try:
@@ -29,9 +32,15 @@ except ImportError:
     from dashboard import render_dashboard
     from indicators import build_indicator_history, compute_indicators
 
-app = FastAPI()
+
+APP_DIR = Path(__file__).resolve().parent
+STATIC_DIR = APP_DIR / "static"
+STALE_AFTER_SECONDS = int(BOT_RULES["stale_after_seconds"])
 STREAM_INTERVAL_SECONDS = 8
 DEFAULT_HISTORY_LIMIT = 120
+
+app = FastAPI()
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 def _safe_close(conn):
@@ -55,9 +64,28 @@ def _serialize_prices(rows):
     return serialized
 
 
+def _is_stale(timestamp):
+    if timestamp is None:
+        return True
+    dt = timestamp if isinstance(timestamp, datetime) else datetime.fromisoformat(str(timestamp))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - dt).total_seconds() > STALE_AFTER_SECONDS
+
+
+def _database_http_error(exc):
+    raise HTTPException(status_code=500, detail=f"Market data is unavailable: {exc}")
+
+
+def _build_stale_flags(rows):
+    latest_timestamp = rows[0][1] if rows else None
+    return latest_timestamp, _is_stale(latest_timestamp)
+
+
 def build_symbol_snapshot(conn, symbol: str, limit: int = DEFAULT_HISTORY_LIMIT):
     symbol_meta = SYMBOL_METADATA.get(symbol, {})
     rows = get_prices(conn, symbol, limit)
+    latest_timestamp, is_stale = _build_stale_flags(rows)
     indicators = compute_indicators(rows) if len(rows) >= 20 else {}
     signals = check_buy_zone(conn, symbol, indicators, rows=rows) if indicators else None
     history = build_indicator_history(rows)
@@ -68,6 +96,8 @@ def build_symbol_snapshot(conn, symbol: str, limit: int = DEFAULT_HISTORY_LIMIT)
         "name": symbol_meta.get("name", symbol),
         "label": symbol_meta.get("label", symbol),
         "price": latest_price,
+        "updated_at": latest_timestamp.isoformat() if latest_timestamp else None,
+        "is_stale": is_stale,
         "history": history,
         "prices": _serialize_prices(rows),
         "indicators": indicators or None,
@@ -80,7 +110,6 @@ def build_overview_item(conn, symbol: str):
     snapshot = build_symbol_snapshot(conn, symbol, limit=80)
     timeframes = snapshot["signals"]["timeframes"] if snapshot["signals"] else []
     change_1h = next((item["change"] for item in timeframes if item["timeframe"] == "1h"), None)
-    latest_timestamp = snapshot["prices"][0]["timestamp"] if snapshot["prices"] else None
 
     return {
         "symbol": symbol,
@@ -92,7 +121,8 @@ def build_overview_item(conn, symbol: str):
         "signal_summary": snapshot["signals"]["summary"] if snapshot["signals"] else "WAIT",
         "active_timeframes": snapshot["signals"]["active_timeframes"] if snapshot["signals"] else [],
         "change_1h": change_1h,
-        "updated_at": latest_timestamp,
+        "updated_at": snapshot["updated_at"],
+        "is_stale": snapshot["is_stale"],
     }
 
 
@@ -106,6 +136,7 @@ def build_market_frame(active_symbol: str | None = None):
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "overview": overview,
             "detail": detail,
+            "bot_health": read_runtime_status(),
         }
     finally:
         _safe_close(conn)
@@ -121,63 +152,78 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/bot/health")
+def bot_health():
+    return read_runtime_status()
+
+
 @app.get("/overview")
 def overview():
-    conn = get_conn()
     try:
-        return [build_overview_item(conn, symbol) for symbol in SYMBOLS]
-    finally:
-        _safe_close(conn)
+        conn = get_conn()
+        try:
+            return [build_overview_item(conn, symbol) for symbol in SYMBOLS]
+        finally:
+            _safe_close(conn)
+    except Exception as exc:
+        _database_http_error(exc)
 
 
 @app.get("/snapshot/{symbol}")
 def snapshot(symbol: str):
-    conn = get_conn()
     try:
-        return build_symbol_snapshot(conn, symbol)
-    finally:
-        _safe_close(conn)
+        conn = get_conn()
+        try:
+            return build_symbol_snapshot(conn, symbol)
+        finally:
+            _safe_close(conn)
+    except Exception as exc:
+        _database_http_error(exc)
 
 
 @app.get("/prices/{symbol}")
 def prices(symbol: str):
-    conn = get_conn()
     try:
-        return {"data": get_prices(conn, symbol)}
-    finally:
-        _safe_close(conn)
+        conn = get_conn()
+        try:
+            return {"data": get_prices(conn, symbol)}
+        finally:
+            _safe_close(conn)
+    except Exception as exc:
+        _database_http_error(exc)
 
 
 @app.get("/indicators/{symbol}")
 def indicators(symbol: str):
-    conn = get_conn()
     try:
-        rows = get_prices(conn, symbol)
-        if not rows or len(rows) < 20:
-            return {"error": "Not enough data"}
-        return compute_indicators(rows)
-    finally:
-        _safe_close(conn)
+        conn = get_conn()
+        try:
+            rows = get_prices(conn, symbol)
+            if not rows or len(rows) < 20:
+                return {"error": "Not enough data"}
+            return compute_indicators(rows)
+        finally:
+            _safe_close(conn)
+    except Exception as exc:
+        _database_http_error(exc)
 
 
 @app.get("/buy/{symbol}")
 def buy_signal(symbol: str):
-    conn = get_conn()
     try:
-        rows = get_prices(conn, symbol)
-        if not rows or len(rows) < 20:
-            return {"error": "Not enough data"}
+        conn = get_conn()
+        try:
+            rows = get_prices(conn, symbol)
+            if not rows or len(rows) < 20:
+                return {"error": "Not enough data"}
 
-        indicators = compute_indicators(rows)
-        signal = check_buy_zone(conn, symbol, indicators, rows=rows)
-
-        return {
-            "symbol": symbol,
-            "price": indicators.get("price"),
-            "signal": signal,
-        }
-    finally:
-        _safe_close(conn)
+            indicators = compute_indicators(rows)
+            signal = check_buy_zone(conn, symbol, indicators, rows=rows)
+            return {"symbol": symbol, "price": indicators.get("price"), "signal": signal}
+        finally:
+            _safe_close(conn)
+    except Exception as exc:
+        _database_http_error(exc)
 
 
 @app.post("/telegram/test")
@@ -196,11 +242,7 @@ def telegram_test(payload: dict = Body(default=None)):
     except RuntimeError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-    return {
-        "ok": True,
-        "message": message,
-        "telegram_ok": telegram_response.get("ok", False),
-    }
+    return {"ok": True, "message": message, "telegram_ok": telegram_response.get("ok", False)}
 
 
 @app.websocket("/ws/market")
@@ -218,7 +260,14 @@ async def market_socket(websocket: WebSocket):
             except asyncio.TimeoutError:
                 pass
 
-            frame = build_market_frame(focus_symbol)
+            try:
+                frame = build_market_frame(focus_symbol)
+            except Exception as exc:
+                frame = {
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "error": f"Market data is unavailable: {exc}",
+                    "bot_health": read_runtime_status(),
+                }
             await websocket.send_json(frame)
     except WebSocketDisconnect:
         return

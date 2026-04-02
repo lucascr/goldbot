@@ -17,6 +17,8 @@ Goldbot bot setup
    - TELEGRAM_TOKEN
    - CHAT_ID
    - SYMBOLS
+   - BOT_RULES
+   - BUY_SIGNAL_RULES
 
 6. Telegram setup checklist:
    - Create the bot in BotFather
@@ -33,4 +35,6 @@ Goldbot bot setup
 Notes:
 - The bot fetches Yahoo Finance prices on a loop.
 - Alerts are sent through Telegram when strategy conditions are met.
+- Runtime status is written for the dashboard bot health panel.
+- Logs are written to logs/goldbot.log.
 - If Telegram returns `chat not found`, verify the exact `chat.id` from `getUpdates`.

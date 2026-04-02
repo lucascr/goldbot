@@ -44,8 +44,11 @@ Goldbot is a small market watcher with two Python apps:
 - MySQL-backed price and signal storage
 - Telegram alert delivery
 - Dashboard with live WebSocket updates
+- Bot health and runtime status panel
 - Multi-timeframe buy signal analysis
+- Configurable signal thresholds
 - Telegram test panel in the web UI
+- Basic automated tests for signal/config behavior
 
 ## Telegram Setup
 
@@ -70,6 +73,13 @@ Telegram notes:
 - `bot/config.py` is tracked and contains safe defaults only.
 - `bot/config.sample.py` is the template you copy for local setup.
 - `bot/config_local.py` is ignored by Git and is the right place for local secrets.
+- `BOT_RULES` and `BUY_SIGNAL_RULES` let you tune thresholds without editing strategy code.
 - The web app reads the same shared bot config.
 - The Telegram test endpoint will fail until `TELEGRAM_TOKEN` and `CHAT_ID` point to a valid chat for the bot.
 - Run commands from the repository root for the cleanest import behavior.
+
+## Tests
+
+Run the current smoke tests from the repository root:
+
+`python -m unittest discover -s tests -v`
