@@ -5,6 +5,16 @@ Goldbot is a small market watcher with two Python apps:
 - `bot/` collects Yahoo Finance prices, stores them in MySQL, and sends Telegram alerts.
 - `web/` serves a FastAPI dashboard with charts, multi-timeframe signals, live updates, and a Telegram test tool.
 
+## Screenshots
+
+### Dashboard
+
+![Goldbot dashboard](docs/images/dashboard.png)
+
+### Telegram Test
+
+![Goldbot Telegram test panel](docs/images/telegram_test.png)
+
 ## Project Structure
 
 - `bot/` background collector and alert logic

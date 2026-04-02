@@ -202,6 +202,13 @@ def render_dashboard(symbols, symbol_metadata):
             letter-spacing: 0.04em;
         }
 
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
         .card .label {
             margin-top: 4px;
             color: var(--muted);
@@ -220,6 +227,36 @@ def render_dashboard(symbols, symbol_metadata):
             margin-top: 8px;
             color: var(--muted);
             font-size: 0.88rem;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 0.76rem;
+        }
+
+        .tiny-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 8px;
+            border-radius: 999px;
+            background: rgba(108, 102, 91, 0.1);
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+        }
+
+        .tiny-pill.buy {
+            background: var(--teal-soft);
+            color: var(--teal);
         }
 
         .badge {
@@ -261,6 +298,34 @@ def render_dashboard(symbols, symbol_metadata):
         .detail-copy {
             margin: 8px 0 0;
             color: var(--muted);
+        }
+
+        .detail-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .summary-box {
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.44);
+        }
+
+        .summary-box span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .summary-box strong {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.98rem;
         }
 
         .signal-chip {
@@ -505,6 +570,27 @@ def render_dashboard(symbols, symbol_metadata):
             background: rgba(166, 75, 60, 0.08);
         }
 
+        .page-note {
+            position: relative;
+            max-width: 760px;
+            margin: 22px auto 28px;
+            padding: 18px 18px 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.7;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        .page-note::before {
+            content: "";
+            display: block;
+            width: 72px;
+            height: 1px;
+            margin: 0 auto 14px;
+            background: rgba(68, 54, 36, 0.2);
+        }
+
         .footer-note {
             margin-top: 12px;
             color: var(--muted);
@@ -525,6 +611,10 @@ def render_dashboard(symbols, symbol_metadata):
         @media (max-width: 720px) {
             .metric-row {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .detail-summary {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -573,6 +663,20 @@ def render_dashboard(symbols, symbol_metadata):
                 </div>
 
                 <div class="detail-price" id="detail-price">--</div>
+                <div class="detail-summary">
+                    <div class="summary-box">
+                        <span>Signal state</span>
+                        <strong id="summary-signal">--</strong>
+                    </div>
+                    <div class="summary-box">
+                        <span>Active windows</span>
+                        <strong id="summary-windows">--</strong>
+                    </div>
+                    <div class="summary-box">
+                        <span>Last refresh</span>
+                        <strong id="summary-refresh">--</strong>
+                    </div>
+                </div>
 
                 <div class="detail-grid">
                     <div class="stack">
@@ -642,7 +746,7 @@ def render_dashboard(symbols, symbol_metadata):
             </section>
         </section>
     </main>
-    <p class="hero-copy" style="max-width:1320px;margin:0 auto 40px;padding:0 18px;">
+    <p class="page-note">
         Track the whole watchlist, inspect rolling price action, and compare buy pressure across
         multiple timeframes. The board updates through a live WebSocket stream, so the screen
         stays fresh without manual reloads.
@@ -671,6 +775,9 @@ def render_dashboard(symbols, symbol_metadata):
             detailCopy: document.getElementById('detail-copy'),
             detailChip: document.getElementById('detail-chip'),
             detailPrice: document.getElementById('detail-price'),
+            summarySignal: document.getElementById('summary-signal'),
+            summaryWindows: document.getElementById('summary-windows'),
+            summaryRefresh: document.getElementById('summary-refresh'),
             metricMa20: document.getElementById('metric-ma20'),
             metricMa50: document.getElementById('metric-ma50'),
             metricRsi: document.getElementById('metric-rsi'),
@@ -701,6 +808,13 @@ def render_dashboard(symbols, symbol_metadata):
         function formatPct(value) {
             if (value === null || value === undefined || Number.isNaN(Number(value))) return '--';
             return `${(Number(value) * 100).toFixed(2)}%`;
+        }
+
+        function formatTime(value) {
+            if (!value) return '--';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '--';
+            return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         }
 
         async function readJsonResponse(response, fallbackMessage) {
@@ -752,12 +866,24 @@ def render_dashboard(symbols, symbol_metadata):
                 const badge = item.signal_summary === 'BUY'
                     ? `<div class="badge live">${item.active_timeframes.length} active windows</div>`
                     : `<div class="badge calm">No trigger</div>`;
+                const tinyPill = item.signal_summary === 'BUY'
+                    ? `<div class="tiny-pill buy">Buy setup</div>`
+                    : `<div class="tiny-pill">Watching</div>`;
                 return `
                     <article class="card ${active}" data-symbol="${item.symbol}">
-                        <div class="symbol">${item.symbol}</div>
-                        <div class="label">${item.label || symbolMeta[item.symbol]?.label || item.name || item.symbol}</div>
+                        <div class="card-top">
+                            <div>
+                                <div class="symbol">${item.symbol}</div>
+                                <div class="label">${item.label || symbolMeta[item.symbol]?.label || item.name || item.symbol}</div>
+                            </div>
+                            ${tinyPill}
+                        </div>
                         <div class="price">${formatPrice(item.price)}</div>
                         <div class="sub">RSI ${formatNumber(item.rsi)} · 1h ${formatPct(item.change_1h)}</div>
+                        <div class="card-meta">
+                            <span>Updated ${formatTime(item.updated_at)}</span>
+                            <span>${item.active_timeframes.length} windows</span>
+                        </div>
                         ${badge}
                     </article>
                 `;
@@ -920,6 +1046,9 @@ def render_dashboard(symbols, symbol_metadata):
             els.detailChip.textContent = summary;
             els.detailChip.className = `signal-chip ${summary === 'BUY' ? '' : 'wait'}`.trim();
             els.detailPrice.textContent = formatPrice(detail.price);
+            els.summarySignal.textContent = summary;
+            els.summaryWindows.textContent = activeTimeframes.length ? activeTimeframes.join(', ') : 'None';
+            els.summaryRefresh.textContent = formatTime(detail.prices?.[0]?.timestamp);
             els.metricMa20.textContent = formatPrice(indicators.ma20);
             els.metricMa50.textContent = formatPrice(indicators.ma50);
             els.metricRsi.textContent = formatNumber(indicators.rsi);

@@ -80,6 +80,7 @@ def build_overview_item(conn, symbol: str):
     snapshot = build_symbol_snapshot(conn, symbol, limit=80)
     timeframes = snapshot["signals"]["timeframes"] if snapshot["signals"] else []
     change_1h = next((item["change"] for item in timeframes if item["timeframe"] == "1h"), None)
+    latest_timestamp = snapshot["prices"][0]["timestamp"] if snapshot["prices"] else None
 
     return {
         "symbol": symbol,
@@ -91,6 +92,7 @@ def build_overview_item(conn, symbol: str):
         "signal_summary": snapshot["signals"]["summary"] if snapshot["signals"] else "WAIT",
         "active_timeframes": snapshot["signals"]["active_timeframes"] if snapshot["signals"] else [],
         "change_1h": change_1h,
+        "updated_at": latest_timestamp,
     }
 
 
